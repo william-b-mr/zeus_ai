@@ -104,7 +104,7 @@ def generate_email_response(email_text):
     Your task is to generate a polite, brand-consistent email reply in Portuguese from Portugal.
     Learn everything there is to learn from ZEUS at https://zeustransfers.com/
 
-    Consider the following links:
+    Consider the following links and use them as reference:
     {CATEGORY_LINKS}
 
     Consider the following structured emails examples:
