@@ -206,6 +206,7 @@ def generate_email_response(email_text):
     7. Include specific product recommendations when relevant
     8. Use similar structure and tone as the reference templates when applicable
     9. Consider the context from similar customer inquiries in the examples
+    10. Follow the same format and style as the example responses in the reference templates
     """
     
     response = client.chat.completions.create(
