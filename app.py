@@ -149,27 +149,6 @@ with tab3:
                 st.markdown(f"- [{link_name.replace('_', ' ').title()}]({link_url})")
 
 def generate_email_response(email_text):
-    # Build context from structured emails
-    context = []
-    if structured_emails and len(structured_emails) > 0:
-        context.append("Available Templates and Examples:")
-        for category, data in structured_emails.items():
-            context.append(f"\nCategory: {category}")
-            context.append("Template:")
-            context.append(data["template"])
-            context.append("\nExamples:")
-            for example in data["examples"]:
-                context.append(f"\nCustomer: {example['customer'][:100]}...")
-                context.append(f"Response: {example['response'][:100]}...")
-
-    # Add product information context
-    context.append("\nProduct Information:")
-    for category, info in PRODUCT_INFO.items():
-        context.append(f"\n{info['name']}:")
-        context.append(info['description'])
-        for link_name, link_url in info['links'].items():
-            context.append(f"- {link_name}: {link_url}")
-
     prompt = f"""
     Act as a professional customer service agent for ZEUS Transfers, a company specializing in DTF transfers for clothing personalization.
     Your task is to generate a helpful, informative, and brand-consistent email reply in Portuguese from Portugal.
@@ -178,8 +157,8 @@ def generate_email_response(email_text):
     ZEUS Transfers specializes in high-quality DTF transfers, offering both size-based and meter-based options.
     We provide comprehensive design services and support for our customers.
 
-    Reference Information:
-    {chr(10).join(context)}
+    Consider the following structured emails:
+    {structured_emails}
 
     Guidelines:
     - Tone: {tone}
