@@ -117,14 +117,26 @@ with tab3:
     st.subheader("📋 Templates Disponíveis")
     if structured_emails and len(structured_emails) > 0:
         template_categories = list(structured_emails.keys())
-        selected_template = st.selectbox(
-            "Selecione um template para referência:",
-            ["Nenhum"] + template_categories
+        selected_category = st.selectbox(
+            "Selecione uma categoria:",
+            ["Nenhuma"] + template_categories
         )
         
-        if selected_template != "Nenhum":
-            st.markdown("#### Exemplo de Resposta:")
-            st.text_area("", structured_emails[selected_template], height=200)
+        if selected_category != "Nenhuma":
+            category_data = structured_emails[selected_category]
+            
+            # Show template
+            st.markdown("#### Template Base:")
+            st.text_area("", category_data["template"], height=200)
+            
+            # Show examples
+            st.markdown("#### Exemplos de Uso:")
+            for i, example in enumerate(category_data["examples"], 1):
+                with st.expander(f"Exemplo {i}"):
+                    st.markdown("**Email do Cliente:**")
+                    st.text_area("", example["customer"], height=100)
+                    st.markdown("**Resposta:**")
+                    st.text_area("", example["response"], height=200)
     else:
         st.info("Nenhum template disponível no momento.")
     
@@ -140,9 +152,15 @@ def generate_email_response(email_text):
     # Build context from structured emails
     context = []
     if structured_emails and len(structured_emails) > 0:
-        context.append("Available Templates:")
-        for category, template in structured_emails.items():
-            context.append(f"- {category}: {template[:100]}...")
+        context.append("Available Templates and Examples:")
+        for category, data in structured_emails.items():
+            context.append(f"\nCategory: {category}")
+            context.append("Template:")
+            context.append(data["template"])
+            context.append("\nExamples:")
+            for example in data["examples"]:
+                context.append(f"\nCustomer: {example['customer'][:100]}...")
+                context.append(f"Response: {example['response'][:100]}...")
 
     # Add product information context
     context.append("\nProduct Information:")
@@ -187,6 +205,7 @@ def generate_email_response(email_text):
     6. Structure the response logically with clear sections if needed
     7. Include specific product recommendations when relevant
     8. Use similar structure and tone as the reference templates when applicable
+    9. Consider the context from similar customer inquiries in the examples
     """
     
     response = client.chat.completions.create(
