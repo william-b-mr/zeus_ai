@@ -45,34 +45,6 @@ PRODUCT_INFO = {
     }
 }
 
-# Define response categories with specific use cases
-RESPONSE_CATEGORIES = {
-    "Informações de Produtos": [
-        "Informações sobre Transfers DTF",
-        "Guias de Aplicação",
-        "Especificações Técnicas",
-        "Opções de Personalização"
-    ],
-    "Suporte Técnico": [
-        "Problemas de Aplicação",
-        "Dúvidas sobre Design",
-        "Questões de Qualidade",
-        "Ajustes e Correções"
-    ],
-    "Vendas e Encomendas": [
-        "Informações de Preço",
-        "Opções de Encomenda",
-        "Prazos de Entrega",
-        "Métodos de Pagamento"
-    ],
-    "Pós-Venda": [
-        "Devoluções",
-        "Garantias",
-        "Reclamações",
-        "Feedback"
-    ]
-}
-
 # Words to avoid in responses
 AVOID_WORDS = [
     "Desculpe", 
@@ -96,22 +68,11 @@ except FileNotFoundError:
     structured_emails = {}
 
 # Create tabs for better organization
-tab1, tab2, tab3 = st.tabs(["Composição do Email", "Configurações Avançadas", "Informações de Referência"])
+tab1, tab2, tab3 = st.tabs(["Composição do Email", "Configurações Avançadas", "Templates e Referências"])
 
 with tab1:
     # Text input for customer email
     customer_email = st.text_area("📧 Email do Cliente:", height=150)
-    
-    # Response category selection
-    selected_categories = []
-    for category, options in RESPONSE_CATEGORIES.items():
-        st.subheader(f"🔹 {category}")
-        category_selections = st.multiselect(
-            "Selecione os tópicos relevantes:",
-            options,
-            key=f"category_{category}"
-        )
-        selected_categories.extend(category_selections)
     
     # Manager notes 
     manager_note = st.text_area("📝 Notas Adicionais (opcional):", height=100)
@@ -140,7 +101,25 @@ with tab2:
     include_links = st.checkbox("Incluir Links Relevantes", value=True)
 
 with tab3:
-    st.markdown("### 📚 Informações de Referência")
+    st.markdown("### 📚 Templates e Referências")
+    
+    # Templates section
+    st.subheader("📋 Templates Disponíveis")
+    if structured_emails:
+        template_categories = list(structured_emails.keys())
+        selected_template = st.selectbox(
+            "Selecione um template para referência:",
+            ["Nenhum"] + template_categories
+        )
+        
+        if selected_template != "Nenhum":
+            st.markdown("#### Exemplo de Resposta:")
+            st.text_area("", structured_emails[selected_template], height=200)
+    else:
+        st.info("Nenhum template disponível no momento.")
+    
+    # Reference links section
+    st.subheader("🔗 Links de Referência")
     for category, info in PRODUCT_INFO.items():
         with st.expander(f"🔹 {info['name']}"):
             st.write(info['description'])
@@ -148,14 +127,20 @@ with tab3:
                 st.markdown(f"- [{link_name.replace('_', ' ').title()}]({link_url})")
 
 def generate_email_response(email_text):
-    # Build context from selected categories
+    # Build context from structured emails
     context = []
-    for category in selected_categories:
-        for product_category, info in PRODUCT_INFO.items():
-            if category.lower() in info['name'].lower():
-                context.append(f"Category: {info['name']}")
-                for link_name, link_url in info['links'].items():
-                    context.append(f"- {link_name}: {link_url}")
+    if structured_emails:
+        context.append("Available Templates:")
+        for category, template in structured_emails.items():
+            context.append(f"- {category}: {template[:100]}...")
+
+    # Add product information context
+    context.append("\nProduct Information:")
+    for category, info in PRODUCT_INFO.items():
+        context.append(f"\n{info['name']}:")
+        context.append(info['description'])
+        for link_name, link_url in info['links'].items():
+            context.append(f"- {link_name}: {link_url}")
 
     prompt = f"""
     Act as a professional customer service agent for ZEUS Transfers, a company specializing in DTF transfers for clothing personalization.
@@ -165,7 +150,7 @@ def generate_email_response(email_text):
     ZEUS Transfers specializes in high-quality DTF transfers, offering both size-based and meter-based options.
     We provide comprehensive design services and support for our customers.
 
-    Relevant Information:
+    Reference Information:
     {chr(10).join(context)}
 
     Guidelines:
@@ -191,6 +176,7 @@ def generate_email_response(email_text):
     5. Maintain a positive and helpful tone
     6. Structure the response logically with clear sections if needed
     7. Include specific product recommendations when relevant
+    8. Use similar structure and tone as the reference templates when applicable
     """
     
     response = client.chat.completions.create(
