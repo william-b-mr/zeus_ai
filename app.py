@@ -59,13 +59,23 @@ AVOID_WORDS = [
     "complicado"
 ]
 
+# Initialize structured_emails as an empty dictionary
+structured_emails = {}
+
 # Load structured email templates
 try:
     with open('zeus_emails_structured.json', 'r', encoding='utf-8') as f:
-        structured_emails = json.load(f)
+        loaded_emails = json.load(f)
+        if isinstance(loaded_emails, dict):
+            structured_emails = loaded_emails
+        else:
+            st.warning("⚠️ O arquivo de templates não está no formato correto.")
 except FileNotFoundError:
     st.warning("⚠️ Arquivo de templates de email não encontrado. Continuando sem exemplos estruturados.")
-    structured_emails = {}
+except json.JSONDecodeError:
+    st.warning("⚠️ Erro ao decodificar o arquivo de templates. Continuando sem exemplos estruturados.")
+except Exception as e:
+    st.warning(f"⚠️ Erro ao carregar templates: {str(e)}. Continuando sem exemplos estruturados.")
 
 # Create tabs for better organization
 tab1, tab2, tab3 = st.tabs(["Composição do Email", "Configurações Avançadas", "Templates e Referências"])
@@ -105,7 +115,7 @@ with tab3:
     
     # Templates section
     st.subheader("📋 Templates Disponíveis")
-    if structured_emails:
+    if structured_emails and len(structured_emails) > 0:
         template_categories = list(structured_emails.keys())
         selected_template = st.selectbox(
             "Selecione um template para referência:",
@@ -129,7 +139,7 @@ with tab3:
 def generate_email_response(email_text):
     # Build context from structured emails
     context = []
-    if structured_emails:
+    if structured_emails and len(structured_emails) > 0:
         context.append("Available Templates:")
         for category, template in structured_emails.items():
             context.append(f"- {category}: {template[:100]}...")
