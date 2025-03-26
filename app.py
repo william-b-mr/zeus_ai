@@ -149,7 +149,7 @@ with tab3:
             for link_name, link_url in info['links'].items():
                 st.markdown(f"- [{link_name.replace('_', ' ').title()}]({link_url})")
 
-def get_structured_emails(json_data, category=None, n=3):
+def get_structured_emails(json_data, category=None, n=10):
     """
     Extract and format examples from structured emails.
     
