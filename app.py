@@ -1,6 +1,7 @@
 import streamlit as st
 from openai import OpenAI
 import json
+import random
 
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 
@@ -148,7 +149,46 @@ with tab3:
             for link_name, link_url in info['links'].items():
                 st.markdown(f"- [{link_name.replace('_', ' ').title()}]({link_url})")
 
-def generate_email_response(email_text):
+def get_structured_emails(json_data, category=None, n=3):
+    """
+    Extract and format examples from structured emails.
+    
+    Args:
+        json_data: Dictionary containing structured emails
+        category: Optional category to filter examples
+        n: Number of examples to return
+    
+    Returns:
+        Formatted string of examples
+    """
+    examples = []
+
+    if category and category in json_data:
+        examples = json_data[category]["examples"]
+    else:
+        # Randomly pull from all categories
+        for c in json_data:
+            examples.extend(json_data[c]["examples"])
+    
+    # Limit to top N
+    selected = random.sample(examples, min(len(examples), n))
+    
+    # Format them
+    return "\n\n".join([f"CLIENTE: {ex['customer']}\nZEUS: {ex['response']}" for ex in selected])
+
+def generate_email_response(
+    email_text,
+    tone,
+    max_length,
+    include_signature,
+    include_contact,
+    include_links,
+    manager_note=None,
+    structured_emails=None
+):
+    # Get relevant examples
+    examples = get_structured_emails(structured_emails) if structured_emails else ""
+    
     prompt = f"""
     Act as a professional customer service agent for ZEUS Transfers, a company specializing in DTF transfers for clothing personalization.
     Your task is to generate a helpful, informative, and brand-consistent email reply in Portuguese from Portugal.
@@ -157,8 +197,9 @@ def generate_email_response(email_text):
     ZEUS Transfers specializes in high-quality DTF transfers, offering both size-based and meter-based options.
     We provide comprehensive design services and support for our customers.
 
-    Consider the following structured emails:
-    {structured_emails}
+    Here are some example conversations to guide your response style and format:
+
+    {examples}
 
     Guidelines:
     - Tone: {tone}
@@ -183,16 +224,17 @@ def generate_email_response(email_text):
     5. Maintain a positive and helpful tone
     6. Structure the response logically with clear sections if needed
     7. Include specific product recommendations when relevant
-    8. Use similar structure and tone as the reference templates when applicable
-    9. Consider the context from similar customer inquiries in the examples
-    10. Follow the same format and style as the example responses in the reference templates
+    8. Follow the same format and style as the example responses above
+    9. When addressing quality issues, always explain the technical reasons and provide solutions
+    10. Include relevant links to our website, especially for quality-related issues
+    11. For delivery inquiries, provide clear timeframes and explain potential variations
     """
     
     response = client.chat.completions.create(
         model="gpt-4-turbo-preview",
         messages=[
             {"role": "system", "content": prompt},
-            {"role": "user", "content": customer_email}
+            {"role": "user", "content": email_text}
         ],
         temperature=0.7,
         max_tokens=1000
@@ -204,7 +246,16 @@ def generate_email_response(email_text):
 if st.button("📤 Gerar Resposta", type="primary"):
     if customer_email:
         with st.spinner("A gerar resposta..."):
-            ai_response = generate_email_response(customer_email)
+            ai_response = generate_email_response(
+                email_text=customer_email,
+                tone=tone,
+                max_length=max_length,
+                include_signature=include_signature,
+                include_contact=include_contact,
+                include_links=include_links,
+                manager_note=manager_note,
+                structured_emails=structured_emails
+            )
             st.success("Resposta gerada com sucesso!")
             st.subheader("✉️ Resposta Sugerida:")
             st.text_area("", ai_response, height=300)
