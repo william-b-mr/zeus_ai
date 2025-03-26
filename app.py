@@ -2,32 +2,79 @@ import streamlit as st
 from openai import OpenAI
 import json
 
-###NEXT STEPS
-# Finish prompt engineering
-# test with a few emails
-# deploy first version to streamlit
-
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 
 client = OpenAI(
     api_key=OPENAI_API_KEY
 )
 
-# App Title
+# App Title and Description
 st.title("Atendimento ao Cliente Inteligente - ZEUS")
+st.markdown("""
+### 🤖 Assistente Virtual ZEUS
+Este assistente ajuda a gerar respostas profissionais e informativas para os clientes da ZEUS Transfers.
+""")
 
-# Create categories of responses and links
-response_categories = {
-    "Resolução de Problemas": [
-        "Explicar causa do problema",
-        "Oferecer substituição gratuita",
-        "Informar sobre reembolso",
-        "Pedir desculpas por atraso na entrega",
-        "Explicar política de devoluções"
+# Define comprehensive product information and links
+PRODUCT_INFO = {
+    "dtf_transfers": {
+        "name": "Transfers DTF",
+        "description": "Transfer digital direto para tecido (DTF) de alta qualidade",
+        "links": {
+            "by_size": "https://zeustransfers.com/product/transfers-dtf-tamanho/",
+            "by_meter": "https://zeustransfers.com/product/transfers-dtf-metro/",
+            "application": "https://zeustransfers.com/como-aplicar-transfers-dtf/",
+            "guidelines": "https://zeustransfers.com/diretrizes-para-upload-dos-designs/"
+        }
+    },
+    "design_services": {
+        "name": "Serviços de Design",
+        "description": "Criação e personalização de designs",
+        "links": {
+            "canva_guide": "https://zeustransfers.com/como-criar-um-plano-no-canva/",
+            "design_help": "https://zeustransfers.com/designs/"
+        }
+    },
+    "support": {
+        "name": "Suporte",
+        "description": "Informações e ajuda",
+        "links": {
+            "faq": "https://zeustransfers.com/faq/",
+            "contact": "https://zeustransfers.com/contacto/"
+        }
+    }
+}
+
+# Define response categories with specific use cases
+RESPONSE_CATEGORIES = {
+    "Informações de Produtos": [
+        "Informações sobre Transfers DTF",
+        "Guias de Aplicação",
+        "Especificações Técnicas",
+        "Opções de Personalização"
+    ],
+    "Suporte Técnico": [
+        "Problemas de Aplicação",
+        "Dúvidas sobre Design",
+        "Questões de Qualidade",
+        "Ajustes e Correções"
+    ],
+    "Vendas e Encomendas": [
+        "Informações de Preço",
+        "Opções de Encomenda",
+        "Prazos de Entrega",
+        "Métodos de Pagamento"
+    ],
+    "Pós-Venda": [
+        "Devoluções",
+        "Garantias",
+        "Reclamações",
+        "Feedback"
     ]
 }
 
-avoid = [
+# Words to avoid in responses
+AVOID_WORDS = [
     "Desculpe", 
     "Desculpa", 
     "culpa", 
@@ -40,38 +87,31 @@ avoid = [
     "complicado"
 ]
 
-CATEGORY_LINKS = {
-    "dtf_by_size": """
-Encomendar Transfers DTF por Tamanho:
-https://zeustransfers.com/product/transfers-dtf-tamanho/
-""",
-    "dtf_by_meter": """
-Encomendar Transfers DTF ao Metro Linear:
-https://zeustransfers.com/product/transfers-dtf-metro/
-""",
-    "canva_plan": """
-Como Criar um Plano no Canva:
-https://zeustransfers.com/como-criar-um-plano-no-canva/
-""",
-    "general": """
-Diretrizes para Upload das Imagens:
-https://zeustransfers.com/diretrizes-para-upload-dos-designs/
-
-Como Aplicar os Transfers DTF:
-https://zeustransfers.com/como-aplicar-transfers-dtf/
-"""
-}
-
 # Load structured email templates
-with open('zeus_emails_structured.json', 'r', encoding='utf-8') as f:
-    structured_emails = json.load(f)
+try:
+    with open('zeus_emails_structured.json', 'r', encoding='utf-8') as f:
+        structured_emails = json.load(f)
+except FileNotFoundError:
+    st.warning("⚠️ Arquivo de templates de email não encontrado. Continuando sem exemplos estruturados.")
+    structured_emails = {}
 
 # Create tabs for better organization
-tab1, tab2 = st.tabs(["Composição do Email", "Configurações Avançadas"])
+tab1, tab2, tab3 = st.tabs(["Composição do Email", "Configurações Avançadas", "Informações de Referência"])
 
 with tab1:
     # Text input for customer email
     customer_email = st.text_area("📧 Email do Cliente:", height=150)
+    
+    # Response category selection
+    selected_categories = []
+    for category, options in RESPONSE_CATEGORIES.items():
+        st.subheader(f"🔹 {category}")
+        category_selections = st.multiselect(
+            "Selecione os tópicos relevantes:",
+            options,
+            key=f"category_{category}"
+        )
+        selected_categories.extend(category_selections)
     
     # Manager notes 
     manager_note = st.text_area("📝 Notas Adicionais (opcional):", height=100)
@@ -97,39 +137,60 @@ with tab2:
     # Additional customization
     include_signature = st.checkbox("Incluir Assinatura da Empresa", value=True)
     include_contact = st.checkbox("Incluir Informações de Contacto", value=True)
+    include_links = st.checkbox("Incluir Links Relevantes", value=True)
+
+with tab3:
+    st.markdown("### 📚 Informações de Referência")
+    for category, info in PRODUCT_INFO.items():
+        with st.expander(f"🔹 {info['name']}"):
+            st.write(info['description'])
+            for link_name, link_url in info['links'].items():
+                st.markdown(f"- [{link_name.replace('_', ' ').title()}]({link_url})")
 
 def generate_email_response(email_text):
+    # Build context from selected categories
+    context = []
+    for category in selected_categories:
+        for product_category, info in PRODUCT_INFO.items():
+            if category.lower() in info['name'].lower():
+                context.append(f"Category: {info['name']}")
+                for link_name, link_url in info['links'].items():
+                    context.append(f"- {link_name}: {link_url}")
+
     prompt = f"""
-    Act as a polite customer service agent for ZEUS - a tarnsfer DTF for clothing personalization.
-    Your task is to generate a polite, brand-consistent email reply in Portuguese from Portugal.
-    Learn everything there is to learn from ZEUS at https://zeustransfers.com/
+    Act as a professional customer service agent for ZEUS Transfers, a company specializing in DTF transfers for clothing personalization.
+    Your task is to generate a helpful, informative, and brand-consistent email reply in Portuguese from Portugal.
 
-    Consider the following links and use them as reference:
-    {CATEGORY_LINKS}
+    Company Context:
+    ZEUS Transfers specializes in high-quality DTF transfers, offering both size-based and meter-based options.
+    We provide comprehensive design services and support for our customers.
 
-    Consider the following structured emails examples:
-    {structured_emails}
-
+    Relevant Information:
+    {chr(10).join(context)}
 
     Guidelines:
     - Tone: {tone}
     - Maximum length: {max_length} words
     - Include signature: {include_signature}
     - Include contact info: {include_contact}
+    - Include relevant links: {include_links}
 
     Customer email:
-    {email_text} 
+    {email_text}
     
     Avoid these expressions/words:
-    {", ".join(avoid)}
+    {", ".join(AVOID_WORDS)}
     
-    {f"And final manager: {manager_note}" if manager_note else ""}
+    {f"Additional notes: {manager_note}" if manager_note else ""}
     
     Key requirements:
     1. Use Portuguese from Portugal
-    2. Be polite and concise
-    3. Maintain a professional tone
-    4. Focus on solutions
+    2. Be polite, professional, and solution-oriented
+    3. Always include relevant links to our website when applicable
+    4. Focus on providing clear, actionable information
+    5. Maintain a positive and helpful tone
+    6. Structure the response logically with clear sections if needed
+    7. Include specific product recommendations when relevant
     """
     
     response = client.chat.completions.create(
