@@ -3,6 +3,17 @@ from openai import OpenAI
 import json
 import random
 
+### Current state: app runs well, a bit slow, the repsonse just became better now that we increased the number of examples
+### But it seems to be overly complicated, we should try to simplify it
+### Next steps:
+### Implement option with 200/500 characters
+### Test more examples
+### Understand all app logic
+### Look for unused variables
+### Look for simplifications 
+
+
+
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 
 client = OpenAI(
@@ -243,26 +254,46 @@ def generate_email_response(
     return response.choices[0].message.content
 
 # Improved response display
-if st.button("📤 Gerar Resposta", type="primary"):
+if st.button("📤 Gerar Respostas", type="primary"):
     if customer_email:
-        with st.spinner("A gerar resposta..."):
-            ai_response = generate_email_response(
+        with st.spinner("A gerar respostas..."):
+            # Generate short response (200 words)
+            short_response = generate_email_response(
                 email_text=customer_email,
                 tone=tone,
-                max_length=max_length,
+                max_length=200,
                 include_signature=include_signature,
                 include_contact=include_contact,
                 include_links=include_links,
                 manager_note=manager_note,
                 structured_emails=structured_emails
             )
-            st.success("Resposta gerada com sucesso!")
-            st.subheader("✉️ Resposta Sugerida:")
-            st.text_area("", ai_response, height=300)
             
-            # Add copy button
-            st.button("📋 Copiar para Área de Transferência", 
-                     on_click=lambda: st.write(ai_response))
+            # Generate detailed response (500 words)
+            detailed_response = generate_email_response(
+                email_text=customer_email,
+                tone=tone,
+                max_length=500,
+                include_signature=include_signature,
+                include_contact=include_contact,
+                include_links=include_links,
+                manager_note=manager_note,
+                structured_emails=structured_emails
+            )
+            
+            st.success("Respostas geradas com sucesso!")
+            
+            # Display short response
+            st.subheader("✉️ Resposta Curta (200 palavras):")
+            st.text_area("", short_response, height=200)
+            st.button("📋 Copiar Resposta Curta", 
+                     on_click=lambda: st.write(short_response))
+            
+            # Display detailed response
+            st.subheader("✉️ Resposta Detalhada (500 palavras):")
+            st.text_area("", detailed_response, height=300)
+            st.button("📋 Copiar Resposta Detalhada", 
+                     on_click=lambda: st.write(detailed_response))
     else:
         st.warning("⚠️ Por favor insira o email do cliente")
 
