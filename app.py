@@ -44,18 +44,23 @@ PRODUCT_INFO = {
         "name": "Serviços de Design",
         "description": "Criação e personalização de designs",
         "links": {
-            "canva_guide": "https://zeustransfers.com/como-criar-um-plano-no-canva/",
-            "design_help": "https://zeustransfers.com/designs/"
+            "canva_guide": "https://zeustransfers.com/como-criar-um-plano-no-canva/"
         }
     },
     "support": {
         "name": "Suporte",
         "description": "Informações e ajuda",
         "links": {
-            "faq": "https://zeustransfers.com/faq/",
-            "contact": "https://zeustransfers.com/contacto/"
+            "contact": "https://zeustransfers.com/contactos/"
         }
-    }
+    },
+    "products": {
+        "name": "Texteis e Acessorios",
+        "description": "Texteis e accessorios disponíveis",
+        "links": {
+            "texteis lisos": "https://zeustransfers.com/texteis-lisos/",
+            "acessorios para estampagem": "https://zeustransfers.com/acessorios-prensa/"
+        }
 }
 
 # Words to avoid in responses
@@ -220,6 +225,12 @@ def generate_email_response(
     # Get time-based greeting
     greeting = get_time_based_greeting()
     
+    # Create a list of all available links for reference
+    available_links = []
+    for category, info in PRODUCT_INFO.items():
+        for link_name, link_url in info['links'].items():
+            available_links.append(f"- {link_name}: {link_url}")
+    
     prompt = f"""
     Act as a professional customer service agent for ZEUS Transfers, a company specializing in DTF transfers for clothing personalization.
     Your task is to generate a helpful, informative, and brand-consistent email reply in Portuguese from Portugal.
@@ -247,6 +258,9 @@ def generate_email_response(
     {", ".join(AVOID_WORDS)}
     
     {f"Additional notes: {manager_note}" if manager_note else ""}
+    
+    IMPORTANT - ONLY USE THESE LINKS:
+    {chr(10).join(available_links)}
     
     Key requirements:
     1. Use Portuguese from Portugal
