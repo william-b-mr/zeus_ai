@@ -300,13 +300,13 @@ if st.button("📤 Gerar Respostas", type="primary"):
             st.success("Respostas geradas com sucesso!")
             
             # Display short response
-            st.subheader("✉️ Resposta Curta (200 palavras):")
+            st.subheader("✉️ Resposta Curta (50 palavras):")
             st.text_area("", short_response, height=200)
             st.button("📋 Copiar Resposta Curta", 
                      on_click=lambda: st.write(short_response))
             
             # Display detailed response
-            st.subheader("✉️ Resposta Detalhada (500 palavras):")
+            st.subheader("✉️ Resposta Detalhada (100 palavras):")
             st.text_area("", detailed_response, height=300)
             st.button("📋 Copiar Resposta Detalhada", 
                      on_click=lambda: st.write(detailed_response))
