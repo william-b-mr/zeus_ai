@@ -2,6 +2,7 @@ import streamlit as st
 from openai import OpenAI
 import json
 import random
+from datetime import datetime
 
 ### Current state: app runs well, a bit slow, the repsonse just became better now that we increased the number of examples
 ### But it seems to be overly complicated, we should try to simplify it
@@ -160,7 +161,7 @@ with tab3:
             for link_name, link_url in info['links'].items():
                 st.markdown(f"- [{link_name.replace('_', ' ').title()}]({link_url})")
 
-def get_structured_emails(json_data, category=None, n=10):
+def get_structured_emails(json_data, category=None, n=8):
     """
     Extract and format examples from structured emails.
     
@@ -187,6 +188,22 @@ def get_structured_emails(json_data, category=None, n=10):
     # Format them
     return "\n\n".join([f"CLIENTE: {ex['customer']}\nZEUS: {ex['response']}" for ex in selected])
 
+def get_time_based_greeting():
+    """
+    Determine the appropriate greeting based on the current time.
+    
+    Returns:
+        str: The appropriate greeting (Bom dia, Boa tarde, or Boa noite)
+    """
+    current_hour = datetime.now().hour
+    
+    if 5 <= current_hour < 12:
+        return "Bom dia"
+    elif 12 <= current_hour < 19:
+        return "Boa tarde"
+    else:
+        return "Boa noite"
+
 def generate_email_response(
     email_text,
     tone,
@@ -199,6 +216,9 @@ def generate_email_response(
 ):
     # Get relevant examples
     examples = get_structured_emails(structured_emails) if structured_emails else ""
+    
+    # Get time-based greeting
+    greeting = get_time_based_greeting()
     
     prompt = f"""
     Act as a professional customer service agent for ZEUS Transfers, a company specializing in DTF transfers for clothing personalization.
@@ -218,6 +238,7 @@ def generate_email_response(
     - Include signature: {include_signature}
     - Include contact info: {include_contact}
     - Include relevant links: {include_links}
+    - Start your response with: {greeting}
 
     Customer email:
     {email_text}
@@ -231,14 +252,9 @@ def generate_email_response(
     1. Use Portuguese from Portugal
     2. Be polite, professional, and solution-oriented
     3. Always include relevant links to our website when applicable
-    4. Focus on providing clear, actionable information
-    5. Maintain a positive and helpful tone
-    6. Structure the response logically with clear sections if needed
-    7. Include specific product recommendations when relevant
-    8. Follow the same format and style as the example responses above
-    9. When addressing quality issues, always explain the technical reasons and provide solutions
-    10. Include relevant links to our website, especially for quality-related issues
-    11. For delivery inquiries, provide clear timeframes and explain potential variations
+    4. Include specific product recommendations when relevant
+    5. Follow the same format and style as the example responses above
+    6. When addressing quality issues, always explain the technical reasons and provide solutions
     """
     
     response = client.chat.completions.create(
@@ -261,7 +277,7 @@ if st.button("📤 Gerar Respostas", type="primary"):
             short_response = generate_email_response(
                 email_text=customer_email,
                 tone=tone,
-                max_length=200,
+                max_length=50,
                 include_signature=include_signature,
                 include_contact=include_contact,
                 include_links=include_links,
@@ -273,7 +289,7 @@ if st.button("📤 Gerar Respostas", type="primary"):
             detailed_response = generate_email_response(
                 email_text=customer_email,
                 tone=tone,
-                max_length=500,
+                max_length=100,
                 include_signature=include_signature,
                 include_contact=include_contact,
                 include_links=include_links,
