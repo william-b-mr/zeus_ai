@@ -61,6 +61,7 @@ PRODUCT_INFO = {
             "texteis lisos": "https://zeustransfers.com/texteis-lisos/",
             "acessorios para estampagem": "https://zeustransfers.com/acessorios-prensa/"
         }
+    }
 }
 
 # Words to avoid in responses
