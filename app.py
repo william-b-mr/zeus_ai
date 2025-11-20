@@ -220,66 +220,68 @@ def generate_email_response(
     manager_note=None,
     structured_emails=None
 ):
-    # Get relevant examples
+    # Prepare examples
     examples = get_structured_emails(structured_emails) if structured_emails else ""
-    
-    # Get time-based greeting
+
+    # Time-based greeting
     greeting = get_time_based_greeting()
-    
-    # Create a list of all available links for reference
-    available_links = []
-    for category, info in PRODUCT_INFO.items():
-        for link_name, link_url in info['links'].items():
-            available_links.append(f"- {link_name}: {link_url}")
-    
-    prompt = f"""
-    Act as a professional customer service agent for ZEUS Transfers, a company specializing in DTF transfers for clothing personalization.
-    Your task is to generate a helpful, informative, and brand-consistent email reply in Portuguese from Portugal.
 
-    Company Context:
-    ZEUS Transfers specializes in high-quality DTF transfers, offering both size-based and meter-based options.
-    We provide comprehensive design services and support for our customers.
+    # Build whitelist of allowed links
+    available_links = [
+        f"- {link_name}: {link_url}"
+        for category, info in PRODUCT_INFO.items()
+        for link_name, link_url in info["links"].items()
+    ]
 
-    Here are some example conversations to guide your response style and format:
+    # Build the system prompt
+    system_prompt = f"""
+You are a professional customer service agent for ZEUS Transfers (Portugal), specializing in DTF transfers.
 
-    {examples}
+Your job is to generate a concise, helpful, and brand-aligned email reply in **Portuguese from Portugal**.
 
-    Guidelines:
-    - Tone: {tone}
-    - Maximum length: {max_length} words
-    - Include signature: {include_signature}
-    - Include contact info: {include_contact}
-    - Include relevant links: {include_links}
-    - Start your response with: {greeting}
+### Company Context
+- ZEUS Transfers produz transferes DTF de alta qualidade.
+- Oferecemos design, apoio técnico e soluções personalizadas.
+- Trabalhamos com tamanhos à medida e ao metro.
 
-    Customer email:
-    {email_text}
-    
-    Avoid these expressions/words:
-    {", ".join(AVOID_WORDS)}
-    
-    {f"Additional notes: {manager_note}" if manager_note else ""}
-    
-    IMPORTANT - ONLY USE THESE LINKS:
-    {chr(10).join(available_links)}
-    
-    Key requirements:
-    1. Use Portuguese from Portugal
-    2. Be polite, professional, and solution-oriented
-    3. Always include relevant links to our website when applicable
-    4. Include specific product recommendations when relevant
-    5. Follow the same format and style as the example responses above
-    6. When addressing quality issues, always explain the technical reasons and provide solutions
-    """
-    
+### Reference Examples (Style + Structure)
+{examples}
+
+### Output Rules
+- Tone: {tone}
+- Max length: {max_length} words
+- Include signature: {include_signature}
+- Include contact info: {include_contact}
+- Include relevant links: {include_links}
+- Start the email with: **{greeting}**
+- Avoid the following expressions:
+{", ".join(AVOID_WORDS)}
+
+{"### Manager Notes\n" + manager_note if manager_note else ""}
+
+### Allowed Links Only
+{chr(10).join(available_links)}
+
+### Requirements
+1. Use Portuguese from Portugal.
+2. Be educado, profissional e orientado para soluções.
+3. Incluir links relevantes sempre que fizer sentido.
+4. Recomendar produtos específicos quando adequado.
+5. Seguir a estrutura e estilo dos exemplos fornecidos.
+6. Ao responder sobre problemas de qualidade, explicar motivos técnicos e dar soluções.
+
+Generate the final email reply only.
+"""
+
+    # GPT-5 invocation (new Responses API)
     response = client.responses.create(
         model="gpt-5-mini",
         input=[
-            {"role": "system", "content": prompt},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": email_text}
         ]
     )
-    
+
     return response.output_text
 
 # Improved response display
