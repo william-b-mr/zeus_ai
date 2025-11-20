@@ -272,14 +272,13 @@ def generate_email_response(
     6. When addressing quality issues, always explain the technical reasons and provide solutions
     """
     
-    response = client.chat.completions.create(
+    response = client.responses.create(
         model="gpt-5-mini",
-        messages=[
+        input=[
             {"role": "system", "content": prompt},
             {"role": "user", "content": email_text}
         ],
-        temperature=1,
-        max_completion_tokens=1000
+        stream=True
     )
     
     return response.choices[0].message.content
