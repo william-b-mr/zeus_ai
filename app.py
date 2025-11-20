@@ -278,7 +278,7 @@ def generate_email_response(
             {"role": "system", "content": prompt},
             {"role": "user", "content": email_text}
         ],
-        temperature=0.7,
+        temperature=1,
         max_completion_tokens=1000
     )
     
