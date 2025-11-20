@@ -277,11 +277,10 @@ def generate_email_response(
         input=[
             {"role": "system", "content": prompt},
             {"role": "user", "content": email_text}
-        ],
-        stream=True
+        ]
     )
     
-    return response.choices[0].message.content
+    return response.output_text
 
 # Improved response display
 if st.button("📤 Gerar Respostas", type="primary"):
