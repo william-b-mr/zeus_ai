@@ -273,7 +273,7 @@ def generate_email_response(
     """
     
     response = client.chat.completions.create(
-        model="gpt-4-turbo-preview",
+        model="gpt-5-mini",
         messages=[
             {"role": "system", "content": prompt},
             {"role": "user", "content": email_text}
